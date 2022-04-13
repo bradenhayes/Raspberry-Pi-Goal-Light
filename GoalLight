@@ -1,0 +1,97 @@
+import asyncio
+from kasa import SmartBulb
+import time
+import requests
+import json
+import schedule
+from datetime import datetime
+from datetime import timedelta
+import pytz
+
+
+bulb_bed_room = SmartBulb("192.168.2.134")
+bulb_living_room = SmartBulb("192.168.2.135")
+
+def gamesToday():
+    date =datetime.today().strftime('%Y-%m-%d')
+    url = "https://statsapi.web.nhl.com/api/v1/schedule?teamId=3&startDate={}&endDate={}".format(date,date)
+    data = requests.get(url).json()
+    if len(data['dates']) > 0:
+        return data['dates'][0]['games'][0]['link']
+    else:
+        return 0
+def live_game(game_url):
+    game_feed = requests.get(game_url).json()
+    game_time = game_feed['gameData']['datetime']['dateTime']
+    d = datetime.fromisoformat(game_time[:-1]).astimezone(pytz.timezone("US/Eastern"))
+    
+    new_temp = d - timedelta(hours=4)
+    new_time = new_temp.strftime('%H:%M')
+    currentGoals=0
+    while 1:
+        if datetime.now().strftime("%H:%M") == new_time:
+            asyncio.run(game_started())
+            time.sleep(60)
+        elif datetime.now().strftime("%H:%M") > new_time:
+            is_goal = requests.get(game_url).json()
+            if is_goal['gameData']['status']['detailedState'] == "Final":
+                break
+            elif is_goal['liveData']['linescore']['teams']['home']['team']['id'] == 3:
+                if is_goal['liveData']['linescore']['teams']['home']['goals'] > currentGoals:
+                    asyncio.run(goal_scored())
+                    currentGoals+=1
+                    
+            else:
+                if is_goal['liveData']['linescore']['teams']['away']['goals'] > currentGoals:
+                    asyncio.run(goal_scored())
+                    currentGoals+=1
+        
+                
+async def goal_scored():
+    await bulb_living_room.update()
+    await bulb_bed_room.update()
+    await bulb_living_room.set_hsv(0,100,50)
+    await bulb_bed_room.set_hsv(0,100,50)
+    await bulb_living_room.set_brightness(100)
+    await bulb_bed_room.set_brightness(100)
+    for i in range(5):
+        await bulb_living_room.turn_off()
+        await bulb_bed_room.turn_off()
+        time.sleep(0.5)
+        await bulb_living_room.turn_on()
+        await bulb_bed_room.turn_on()
+        time.sleep(1) 
+    await bulb_living_room.set_color_temp(3000)
+    await bulb_bed_room.set_color_temp(3000)
+                    
+async def game_started():
+    await bulb_living_room.update()
+    await bulb_bed_room.update()
+    await bulb_living_room.set_hsv(180,100,50)
+    await bulb_bed_room.set_hsv(180,100,50)
+    await bulb_living_room.set_brightness(100)
+    await bulb_bed_room.set_brightness(100)
+    for i in range(5):
+        await bulb_living_room.turn_off()
+        await bulb_bed_room.turn_off()
+        time.sleep(0.5)
+        await bulb_living_room.turn_on()
+        await bulb_bed_room.turn_on()
+        time.sleep(1) 
+    await bulb_living_room.set_color_temp(3000)
+    await bulb_bed_room.set_color_temp(3000)
+
+def get_games():
+    game_link = 0
+    game_link = gamesToday()
+    if game_link != 0:
+        game_url = "https://statsapi.web.nhl.com{}".format(game_link)
+        live_game(game_url)
+    
+schedule.every().day.at('06:00').do(get_games)
+
+if __name__ == "__main__":
+    while 1:
+        schedule.run_pending()
+        time.sleep(1)
+        
