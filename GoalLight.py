@@ -28,7 +28,7 @@ def live_game(game_url):
     
     new_temp = d - timedelta(hours=4)
     new_time = new_temp.strftime('%H:%M')
-    currentGoals= 0
+    currentGoals = 0
     while 1:
         if datetime.now().strftime("%H:%M") == new_time:
             gameStartedProcess1 = Process(target=living_room_start_callback)
