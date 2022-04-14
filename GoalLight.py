@@ -14,7 +14,7 @@ bulb_bed_room = SmartBulb("192.168.2.134")
 bulb_living_room = SmartBulb("192.168.2.135")
 
 def gamesToday():
-    date =datetime.today().strftime('%Y-%m-%d')
+    date = datetime.today().strftime('%Y-%m-%d')
     url = "https://statsapi.web.nhl.com/api/v1/schedule?teamId=9&startDate={}&endDate={}".format(date,date)
     data = requests.get(url).json()
     if len(data['dates']) > 0:
