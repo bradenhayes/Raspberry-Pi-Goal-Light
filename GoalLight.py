@@ -31,7 +31,7 @@ def live_game(game_url):
     currentGoals= 0
     while 1:
         if datetime.now().strftime("%H:%M") == new_time:
-            gameStartedProcess1= Process(target=living_room_start_callback)
+            gameStartedProcess1 = Process(target=living_room_start_callback)
             gameStartedProcess2 = Process(target=bed_room_start_callback)
             gameStartedProcess1.start()
             gameStartedProcess2.start()
@@ -44,7 +44,7 @@ def live_game(game_url):
                 break
             elif is_goal['liveData']['linescore']['teams']['home']['team']['id'] == 3:
                 if is_goal['liveData']['linescore']['teams']['home']['goals'] > currentGoals:
-                    goalProcess1= Process(target=living_room_goal_callback)
+                    goalProcess1 = Process(target=living_room_goal_callback)
                     goalProcess2 = Process(target=bed_room_goal_callback)
                     goalProcess1.start()
                     goalProcess2.start()
@@ -53,7 +53,7 @@ def live_game(game_url):
                     currentGoals+=1                   
             else:
                 if is_goal['liveData']['linescore']['teams']['away']['goals'] > currentGoals:
-                    goalProcess1= Process(target=living_room_goal_callback)
+                    goalProcess1 = Process(target=living_room_goal_callback)
                     goalProcess2 = Process(target=bed_room_goal_callback)
                     goalProcess1.start()
                     goalProcess2.start()
